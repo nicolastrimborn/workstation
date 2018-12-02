@@ -260,9 +260,9 @@ def get_last_item(table):
     c.execute("SELECT Time FROM "+table+" ORDER BY Time DESC LIMIT 1")
     return c.fetchall()
 
-def total_time(table):
-    
+#def total_time(table):
 
+    
 if __name__ == '__main__':
     app.run(host= '127.0.0.1')
     conn.close()

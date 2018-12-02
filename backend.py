@@ -47,12 +47,11 @@ with conn:
     c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Error", 'Time': timestamp})
     c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Idle", 'Time': timestamp})
     c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Working", 'Time': timestamp})
-    """
     c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': "Spring", 'Time': timestamp})
     c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': "valve", 'Time': timestamp})
     c.execute("INSERT INTO event VALUES (null, :Event, :Time)", {'Event': "test Alarm", 'Time': timestamp})
     c.execute("INSERT INTO pallet_transaction VALUES (null, :Contents, :QtyFlow, :Time)", {'Contents': "Spring", 'QtyFlow': 1, 'Time': timestamp})
-
+    
 Dates=["2018-11-29T00:10:00.891869",
        "2018-11-29T00:44:00.891869",
        "2018-11-29T01:30:00.891869",
@@ -132,7 +131,7 @@ def add_data_SQL(tablename,list_data):
 
 for i in range(len(Dates)):
     add_data_SQL("current_state",[States[i],Dates[i]])
-
+"""
 
 ###################################### JSON ENDPOINTS ##################################################################
 @app.route('/<string:page_name>/')
@@ -148,11 +147,11 @@ def static_page(page_name):
 @app.route('/workstation/state', methods=['POST'])
 def updateState():
     content = request.json
-    #print ("(Post Req) Updated State recieved: ", content)
+    print ("(Post Req) Updated State recieved: ", content)
     newState=content["state"]
     #now = datetime.datetime.now()
     #time= now.isoformat()
-    time= datetime.datetime.now()
+    time= datetime.now().isoformat()
     change_state(newState, time)
     cnvMsg = {'state': newState, 'serverTime':time}
     cnvMsg_str = json.dumps(cnvMsg)
@@ -164,7 +163,7 @@ def getWSState():
     cnvMsg = get_State()
     cnvMsg_str = json.dumps(cnvMsg)
     #print(cnvMsg)
-    print("total time: ", total_time('workstation'))
+    #print("total time: ", total_time('workstation'))
     return cnvMsg_str
 
 @app.route('/workstation/states', methods=['GET'])
@@ -234,9 +233,9 @@ def getCurrentState():
 
 def change_state(state, time):
     previousState = getCurrentState
-    if(previousState[0][0] != state):
-        with conn:
-            c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': state,'Time':time})
+    # if(previousState[0][0] != state):
+        # with conn:
+    c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': state,'Time':time})
 
 def get_State():
     c = conn.cursor()
@@ -270,11 +269,12 @@ def add_Pallets(newPallet, time):
     with conn:
         c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': newPallet, 'Time': time})
 
+"""
 def total_time(table):
 
     lastTimeStamp = datetime.strptime(get_last_item(table,'Time','Time')[0][0],'%Y-%m-%dT%H:%M:%S.%f')
     firstTimeStamp = datetime.strptime(get_first_item(table,'Time','Time')[0][0],'%Y-%m-%dT%H:%M:%S.%f')
-    print("Get Current State: ", getCurrentState() )
+    #print("Get Current State: ", getCurrentState() )
     totalTime = lastTimeStamp - firstTimeStamp
     checkTime();
     return totalTime
@@ -289,7 +289,7 @@ def checkTime():
             if(startTime):
                 timeInCurrentState = endTime - startTime;
 
-"""
+
 def total_time_in_state(table,state):
 
 
@@ -301,7 +301,7 @@ def calcOEE():
 """
 
 if __name__ == '__main__':
-    app.run(host= '192.168.0.12')
+    app.run(host= '192.168.0.11')
     #app.run(host= '127.0.0.1')
     conn.close()
 

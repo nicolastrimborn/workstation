@@ -1,3 +1,12 @@
+'''
+Trigger an alarm every time the workstation goes to error - pi
+Trigger an event everytime the workstation starts or gets reset - pi
+If the workstation has 5 pallets trigger an alarm - pi
+If the workstation has 6 pallets trigger an alarm - pi
+If the workstation is y amount of time idle, trigger an alarm - server
+If the workstation is x amount of time idle, trigger an alarm - server
+'''
+
 from flask import Flask, render_template
 from flask import request
 import json
@@ -5,22 +14,31 @@ from datetime import datetime
 import time
 import sqlite3
 
+#TrackingState = {TabStates:[],TabTimes:[]}
+
 app = Flask(__name__)
 conn = sqlite3.connect(':memory:', check_same_thread=False)
 c = conn.cursor()
 
 c.execute("""CREATE TABLE workstation (
 	        Key INTEGER PRIMARY KEY,
-	        State text,
-	        Time timestamp
+	        State TEXT,
+	        Time TIMESTAMP 
             )""")
 
 c.execute("""CREATE TABLE workstation_pallets (
 	        Slot INTEGER PRIMARY KEY,
-	        Content text
+	        Content TEXT
             )""")
 
+c.execute("""CREATE TABLE event (
+            Key INTEGER PRIMARY KEY,
+	        AlarmID INTEGER,
+	        Event TEXT,
+	        Time TIMESTAMP
+            )""")
 
+# Adds 6 fixed rows
 for i in range(6):
     with conn:
         c.execute("INSERT INTO workstation_pallets VALUES ("+str(i)+", null)")
@@ -102,6 +120,35 @@ def WorkstationHandler():
         #print(cnvMsg)
         return cnvMsg_str
 
+#Message format eg. json={"event":"Error State"}
+@app.route('/workstation/event', methods=['POST','GET'])
+def eventHandler():
+    def addEventSQL(alID, alarmText, time):
+        with conn:
+            c.execute("INSERT INTO event VALUES (null, :AlarmID, :Event, :Time)", {'AlarmID': alID, 'Event': alarmText, 'Time':time})
+
+    def getEventFromSQL():
+        c = conn.cursor()
+        c.execute("SELECT * FROM event")
+        return c.fetchall()
+
+    if request.method=='POST':
+        content = request.json
+        print ("(Post Req) New Event: " , content)
+        alarmID = content["AlarmID"]
+        AlarmText = content["AlarmText"]
+        time = datetime.now().isoformat()
+        addEventSQL(alarmID, AlarmText, time)
+        cnvMsg = {'alarmID': alarmID, 'event': AlarmText, 'serverTime':time}
+        cnvMsg_str = json.dumps(cnvMsg)
+        return cnvMsg_str
+
+    elif request.method=='GET':
+        #print ("(Get Req) Send WS Events:")
+        cnvMsg = getEventFromSQL()
+        cnvMsg_str = json.dumps(cnvMsg)
+        #print(cnvMsg)
+        return cnvMsg_str
 
 if __name__ == '__main__':
     app.run(host= '192.168.0.11')

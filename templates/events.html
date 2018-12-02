@@ -46,17 +46,19 @@
     function getHtmlTable(dataObj){
         var tb="<table>\n" +
             "  <tr>\n" +
-            "    <th>Id</th>\n" +
-            "    <th>Events</th>\n" +
+            "    <th>Count</th>\n" +
+            "    <th>Alarm ID</th>\n" +
+            "    <th>Alarm Type</th>\n" +
             "    <th>Time</th>\n" +
             "  </tr>";
 
         for(var i in dataObj)
         {
             var Key = dataObj[i][0];
-            var Events = dataObj[i][1];
-            var Time = dataObj[i][2];
-            tb+="<tr><td>"+Key+"</td><td>"+Events+"</td><td>"+Time+"</td>";
+            var AlarmID = dataObj[i][1];
+            var AlarmText = dataObj[i][2];
+            var Time = dataObj[i][3];
+            tb+="<tr><td>"+Key+"</td><td>"+AlarmID+"</td><td>"+AlarmText+"</td><td>"+Time+"</td>";
         }
         tb+="</table>";
         return tb;

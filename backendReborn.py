@@ -14,7 +14,7 @@ from datetime import datetime
 import time
 import sqlite3
 
-#TrackingState = {TabStates:[],TabTimes:[]}
+timeEachState = {"idle":0, "working":0, "error":0}
 
 app = Flask(__name__)
 conn = sqlite3.connect(':memory:', check_same_thread=False)
@@ -55,6 +55,8 @@ def static_page(page_name):
 @app.route('/workstation/state', methods=['POST','GET'])
 def stateHandler():
 
+    global timeEachState
+
     # Function to add a state to the SQL table
     def addStateSQL(state, time):
         # previousState = getCurrentState
@@ -81,9 +83,16 @@ def stateHandler():
         addStateSQL(newState, time)
         cnvMsg = {'state': newState, 'serverTime':time}
         cnvMsg_str = json.dumps(cnvMsg)
+        #if Flag:
+        #    #Specialcomputation for the beggining
+        #else:
+        #    #Normalcomputation
+        #    Flag=False
+        #    timeEachState[newState] = timeEachState[newState] + time
         return cnvMsg_str
     elif request.method=='GET':
         #print ("(GET Request) Workstation State:")
+        time = datetime.now().isoformat()
         cnvMsg = getStateFromSQL()
         cnvMsg_str = json.dumps(cnvMsg)
         return cnvMsg_str
@@ -149,6 +158,9 @@ def eventHandler():
         cnvMsg_str = json.dumps(cnvMsg)
         #print(cnvMsg)
         return cnvMsg_str
+
+def checkTimeInState():
+
 
 if __name__ == '__main__':
     app.run(host= '192.168.0.11')

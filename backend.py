@@ -1,13 +1,17 @@
 from flask import Flask, render_template
 from flask import request
 import json
-import datetime
+from datetime import datetime
+import time
 import sqlite3
 
 ###################################### SQL DB and Tables################################################################
 app = Flask(__name__)
 conn = sqlite3.connect(':memory:', check_same_thread=False)
 c = conn.cursor()
+
+timeX = 5
+timeY = 5
 
 c.execute("""CREATE TABLE workstation (
 	        Key INTEGER PRIMARY KEY,
@@ -38,15 +42,17 @@ c.execute("""CREATE TABLE pallet_transaction (
 with conn:
     #now = datetime.datetime.now()
     #time= now.isoformat()
-    time = datetime.datetime.now()
-    c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Error", 'Time': time})
-    c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Idle", 'Time': time})
-    c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Working", 'Time': time})
-    c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': "Spring", 'Time': time})
-    c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': "valve", 'Time': time})
-    c.execute("INSERT INTO event VALUES (null, :Event, :Time)", {'Event': "test Alarm", 'Time': time})
-    c.execute("INSERT INTO pallet_transaction VALUES (null, :Contents, :QtyFlow, :Time)", {'Contents': "Spring", 'QtyFlow': 1, 'Time': time})
-""""
+    timestamp = datetime.now()
+    """"
+    c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Error", 'Time': timestamp})
+    c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Idle", 'Time': timestamp})
+    c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': "Working", 'Time': timestamp})
+    """
+    c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': "Spring", 'Time': timestamp})
+    c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': "valve", 'Time': timestamp})
+    c.execute("INSERT INTO event VALUES (null, :Event, :Time)", {'Event': "test Alarm", 'Time': timestamp})
+    c.execute("INSERT INTO pallet_transaction VALUES (null, :Contents, :QtyFlow, :Time)", {'Contents': "Spring", 'QtyFlow': 1, 'Time': timestamp})
+
 Dates=["2018-11-29T00:10:00.891869",
        "2018-11-29T00:44:00.891869",
        "2018-11-29T01:30:00.891869",
@@ -126,7 +132,7 @@ def add_data_SQL(tablename,list_data):
 
 for i in range(len(Dates)):
     add_data_SQL("current_state",[States[i],Dates[i]])
-"""
+
 
 ###################################### JSON ENDPOINTS ##################################################################
 @app.route('/<string:page_name>/')
@@ -158,6 +164,7 @@ def getWSState():
     cnvMsg = get_State()
     cnvMsg_str = json.dumps(cnvMsg)
     #print(cnvMsg)
+    print("total time: ", total_time('workstation'))
     return cnvMsg_str
 
 @app.route('/workstation/states', methods=['GET'])
@@ -165,6 +172,7 @@ def getWSStateAll():
     #print ("(GET Request) Workstation State:")
     cnvMsg = get_States_All()
     cnvMsg_str = json.dumps(cnvMsg)
+    #print("total time: ", total_time('workstation'))
     #print(cnvMsg)
     return cnvMsg_str
 
@@ -211,10 +219,24 @@ def addPallet():
     return cnvMsg_str
 
 ###################################### SQL Methods #####################################################################
+def get_first_item(table, selectColumn, sortBy):
+    c = conn.cursor()
+    c.execute("SELECT "+selectColumn+" FROM "+table+" ORDER BY "+sortBy+" ASC LIMIT 1")
+    return c.fetchall()
+
+def get_last_item(table, selectColumn, sortBy):
+    c = conn.cursor()
+    c.execute("SELECT "+selectColumn+" FROM "+table+" ORDER BY "+sortBy+" DESC LIMIT 1")
+    return c.fetchall()
+
+def getCurrentState():
+    return get_last_item('workstation','*','time')
 
 def change_state(state, time):
-    with conn:
-        c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': state,'Time':time})
+    previousState = getCurrentState
+    if(previousState[0][0] != state):
+        with conn:
+            c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': state,'Time':time})
 
 def get_State():
     c = conn.cursor()
@@ -248,23 +270,39 @@ def add_Pallets(newPallet, time):
     with conn:
         c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': newPallet, 'Time': time})
 
-def get_first_item(table):
-        c = conn.cursor()
-        c.execute("SELECT Time FROM "+table+" ORDER BY Time DESC LIMIT 1")
-        return c.fetchall()
+def total_time(table):
 
-def get_last_item(table):
-    c = conn.cursor()
-    # c.execute("SELECT * FROM workstation WHERE State=:state", {'state': 'Idle'})
-    # c.execute("SELECT * FROM workstation WHERE 1")
-    c.execute("SELECT Time FROM "+table+" ORDER BY Time DESC LIMIT 1")
-    return c.fetchall()
+    lastTimeStamp = datetime.strptime(get_last_item(table,'Time','Time')[0][0],'%Y-%m-%dT%H:%M:%S.%f')
+    firstTimeStamp = datetime.strptime(get_first_item(table,'Time','Time')[0][0],'%Y-%m-%dT%H:%M:%S.%f')
+    print("Get Current State: ", getCurrentState() )
+    totalTime = lastTimeStamp - firstTimeStamp
+    checkTime();
+    return totalTime
 
-#def total_time(table):
+def checkTime():
+    currentState = getCurrentState()
+    if(currentState):
+        #print("currentState: ", currentState[0][1])
+        if (currentState[0][1] != "Working"):
+            endTime = datetime.now()
+            startTime = datetime.strptime(currentState[0][2],'%Y-%m-%dT%H:%M:%S.%f')
+            if(startTime):
+                timeInCurrentState = endTime - startTime;
 
-    
+"""
+def total_time_in_state(table,state):
+
+
+def calcOEE():
+    timeTotal = total_time('workstation')
+    timeIdle =
+    timeError
+    timeWorking
+"""
+
 if __name__ == '__main__':
-    app.run(host= '127.0.0.1')
+    app.run(host= '192.168.0.12')
+    #app.run(host= '127.0.0.1')
     conn.close()
 
 """

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
+    <a href="/index">Get request</a> <a href="/state">State</a> <a href="/events">Events</a> <a href="/dashboard">Dashboard</a>
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+    <title>Workstation Events</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+</head>
+<body>
+<h1>Workstation Events</h1>
+<p>Retrieves Workstation Events every</p>
+<div id="log"> </div>
+
+<script>
+    window.setInterval(function(){
+        getState()
+    }, 1000);
+
+    function getState(){
+        console.log("get state routine...");
+        //Contact REST endpoint on the server
+        $.get( "/workstation/event", function( data ) {
+            dataObj = JSON.parse(data);
+            console.log(dataObj);
+            htmlTable=getHtmlTable(dataObj);
+            $("#log").html(htmlTable);
+        });
+    }
+    function getHtmlTable(dataObj){
+        var tb="<table>\n" +
+            "  <tr>\n" +
+            "    <th>Id</th>\n" +
+            "    <th>Events</th>\n" +
+            "    <th>Time</th>\n" +
+            "  </tr>";
+
+        for(var i in dataObj)
+        {
+            var Key = dataObj[i][0];
+            var Events = dataObj[i][1];
+            var Time = dataObj[i][2];
+            tb+="<tr><td>"+Key+"</td><td>"+Events+"</td><td>"+Time+"</td>";
+        }
+        tb+="</table>";
+        return tb;
+    }
+</script>
+</body>
+</html>

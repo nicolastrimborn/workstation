@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial;
+            padding: 10px;
+            background: #f1f1f1;
+        }
+        /* Header/Blog Title */
+        .header {
+            padding: 30px;
+            text-align: center;
+            background: white;
+        }
+        .header h1 {
+            font-size: 50px;
+        }
+        /* Style the top navigation bar */
+        .topnav {
+            overflow: hidden;
+            background-color: #333;
+        }
+        /* Style the topnav links */
+        .topnav a {
+            float: left;
+            display: block;
+            color: #f2f2f2;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        /* Change color on hover */
+        .topnav a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        /* Create two unequal columns that floats next to each other */
+        /* Left column */
+        .leftcolumn {
+            float: left;
+            width: 65%;
+        }
+        /* Right column */
+        .rightcolumn {
+            float: left;
+            width: 35%;
+            background-color: #f1f1f1;
+            padding-left: 20px;
+        }
+        /* Fake image */
+        .fakeimg {
+            background-color: #aaa;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        /* Add a card effect for articles */
+        .card {
+            background-color: white;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        /* Footer */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            background: #ddd;
+            margin-top: 20px;
+        }
+        /* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other */
+        @media screen and (max-width: 800px) {
+            .leftcolumn, .rightcolumn {
+                width: 100%;
+                padding: 0;
+            }
+        }
+        /* Responsive layout - when the screen is less than 400px wide, make the navigation links stack on top of each other instead of next to each other */
+        @media screen and (max-width: 400px) {
+            .topnav a {
+                float: none;
+                width: 100%;
+            }
+        }
+        /* current state initialisation*/
+        #currentstate {
+            background-color: #aaa;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-size: 40px;
+        }
+
+        /* Css  Properties for Pallets Table */
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Pallet Workstation</h1>
+    </div>
+    <div class="topnav">
+        <a href="/index">Get request</a>
+        <a href="/state">State</a>
+        <a href="/events">Events</a>
+        <a href="/dashboard">Dashboard</a>
+    </div>
+
+    <div class="row">
+        <div class="leftcolumn">
+            <div class="card">
+                <h2>Current Pallets</h2>
+                <h5> Current Pallets in Workstation</h5>
+                <div id="log"> </div>
+                <p>Some text..</p>
+            </div>
+        </div>
+        <div class="rightcolumn">
+            <div class="card">
+                <h2>Current State</h2>
+                <div id="currentstate" style="height:100px;">State</div>
+                <p>Current state of workstation</p>
+            </div>
+            <div id="chartContainer" style="height: 300px; width: 100%;"></div>
+        </div>
+    </div>
+    <div class="footer">
+        <span id="spanTime"></span>
+        <h2>Footer</h2>
+    </div>
+    <script>
+        //This Script updates the current state of the Workstation.
+        window.setInterval(function(){
+            getState();
+            getPallets();
+        }, 1000);
+
+        function getState(){
+            console.log("get state routine...");
+            //Contact REST endpoint on the server
+            $.get( "/workstation/state", function( data ) {
+                //Message format = [id, state, time]
+                dataObj = JSON.parse(data);
+                console.log(dataObj);
+                updateStatusDisplay("currentstate", dataObj);
+            });
+        }
+        function updateStatusDisplay(id, dataObj) {
+            var el = document.getElementById(id);
+            var Key, State, Time;
+            for(var i in dataObj) {
+                Key = dataObj[i][0];
+                State = dataObj[i][1];
+                Time = dataObj[i][2];
+            }
+            if (State == "Idle") {
+                el.innerText = "IDLE";
+                el.style.color = "black";
+                el.style.backgroundColor = "#ffb90f";
+            } else if (State == "Working") {
+                el.innerText = "WORKING";
+                el.style.color = "black";
+                el.style.backgroundColor = "#66cd00";
+            } else if (State  == "Error") {
+                el.innerText = "ERROR";
+                el.style.color = "black";
+                el.style.backgroundColor = "#ff4040";
+            } else {
+                el.style.backgroundColor = "#ff1493";
+                console.log("message error")
+                console.log(State);
+            }
+        }
+
+        function getPallets(){
+            console.log("get pallets routine...");
+            //Contact REST endpoint on the server
+            $.get( "/workstation/pallets", function( data ) {
+                dataObj = JSON.parse(data);
+                console.log(dataObj);
+                htmlTable=getHtmlTable(dataObj);
+                $("#log").html(htmlTable);
+            });
+        }
+        function getHtmlTable(dataObj){
+            var tb="<table>\n" +
+                "  <tr>\n" +
+                "    <th>PalletID</th>\n" +
+                "    <th>Contents</th>\n" +
+                "    <th>Time</th>\n" +
+                "  </tr>";
+
+            for(var i in dataObj)
+            {
+                var PalletID = dataObj[i][0];
+                var Contents = dataObj[i][1];
+                var Time = dataObj[i][2];
+                tb+="<tr><td>"+PalletID+"</td><td>"+Contents+"</td><td>"+Time+"</td>";
+            }
+            tb+="</table>";
+            return tb;
+        }
+    </script>
+    <script type="text/javascript">
+        window.onload = function () {
+            var chart = new CanvasJS.Chart("chartContainer",
+                {
+                    title:{
+                        text: "Machine OEE"
+                    },
+                    legend: {
+                        maxWidth: 350,
+                        itemWidth: 120
+                    },
+                    data: [
+                        {
+                            type: "pie",
+                            showInLegend: false,
+                            legendText: "{indexLabel}",
+                            dataPoints: [
+                                { y: 10, indexLabel: "Idle" },
+                                { y: 40, indexLabel: "Error" },
+                                { y: 30, indexLabel: "Running" },
+                            ]
+                        }
+                    ]
+                });
+            chart.render();
+        }
+    </script>
+</body>
+</html>

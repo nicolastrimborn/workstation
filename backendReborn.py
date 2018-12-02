@@ -20,6 +20,7 @@ c.execute("""CREATE TABLE workstation_pallets (
 	        Content text
             )""")
 
+
 for i in range(6):
     with conn:
         c.execute("INSERT INTO workstation_pallets VALUES ("+str(i)+", null)")

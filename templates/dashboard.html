@@ -159,7 +159,7 @@
         //This Script updates the current state of the Workstation.
         window.setInterval(function(){
             getState();
-            //getPallets();
+            getPallets();
         }, 1000);
 
         function getState(){
@@ -212,17 +212,15 @@
         function getHtmlTable(dataObj){
             var tb="<table>\n" +
                 "  <tr>\n" +
-                "    <th>PalletID</th>\n" +
+                "    <th>Workstation Slot</th>\n" +
                 "    <th>Contents</th>\n" +
-                "    <th>Time</th>\n" +
                 "  </tr>";
 
             for(var i in dataObj)
             {
                 var PalletID = dataObj[i][0];
                 var Contents = dataObj[i][1];
-                var Time = dataObj[i][2];
-                tb+="<tr><td>"+PalletID+"</td><td>"+Contents+"</td><td>"+Time+"</td>";
+                tb+="<tr><td>"+PalletID+"</td><td>"+Contents+"</td>";
             }
             tb+="</table>";
             return tb;

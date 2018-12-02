@@ -16,22 +16,13 @@ c.execute("""CREATE TABLE workstation (
             )""")
 
 c.execute("""CREATE TABLE workstation_pallets (
-	        Key INTEGER PRIMARY KEY,
-	        Content text,
-	        Time timestamp
+	        Slot INTEGER PRIMARY KEY,
+	        Content text
             )""")
-'''
-Slots = [1,2,3,4,5,6]
 
-for i in range(len(Slots)):
+for i in range(6):
     with conn:
-        c.execute("INSERT INTO workstation_pallets VALUES (Slots[i], :State, :ServerTime)", {'State': list_data[0], 'ServerTime': list_data[1]})
-'''
-
-
-
-
-
+        c.execute("INSERT INTO workstation_pallets VALUES ("+str(i)+", null)")
 
 @app.route('/<string:page_name>/')
 def static_page(page_name):
@@ -80,31 +71,36 @@ def stateHandler():
 
 @app.route('/workstation/pallets', methods=['POST','GET'])
 def WorkstationHandler():
-    '''
+
     def get_Pallets():
         c = conn.cursor()
         c.execute("SELECT * FROM workstation_pallets")
         return c.fetchall()
 
-    def add_Pallets(newPallet, time):
+    def updatePallets(PalletsArray):
         with conn:
-            c.execute("INSERT INTO workstation_pallets VALUES (null, :Content, :Time)", {'Content': newPallet, 'Time': time})
-    '''
+            for i in range(6):
+                try:
+                    c.execute("UPDATE workstation_pallets SET Content = :Contents WHERE Slot =:Index", {'Contents': PalletsArray[i], 'Index': i})
+
+                except:
+                    c.execute("UPDATE workstation_pallets SET Content = :Contents WHERE Slot =:Index", {'Contents': 'Empty', 'Index': i})
+
     if request.method=='POST':
         content = request.json
         PalletsArray=content["workstation"]
         print(PalletsArray)
-        #for i in range(len(PalletsArray)):
-        #    print(PalletsArray[i])
+        updatePallets(PalletsArray)
         time= datetime.now().isoformat()
         cnvMsg = {'workstation': 'empty','serverTime':time}
         cnvMsg_str = json.dumps(cnvMsg)
         return cnvMsg_str
     elif request.method=='GET':
-        time= datetime.now().isoformat()
-        cnvMsg = {'workstation': 'empty','serverTime':time}
+        cnvMsg = get_Pallets()
         cnvMsg_str = json.dumps(cnvMsg)
+        #print(cnvMsg)
         return cnvMsg_str
+
 
 if __name__ == '__main__':
     app.run(host= '192.168.0.11')

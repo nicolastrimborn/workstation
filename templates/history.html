@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <a href="/state">States</a> <a href="/events">Events</a> <a href="/history">History</a> <a href="/dashboard">Dashboard</a>
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+    <title>Workstation History</title>
+</head>
+<body>
+<h1>Pallet History</h1>
+<p>Retrieves Pallet History</p>
+<div id="log"> </div>
+
+<script>
+    window.setInterval(function(){
+        getState()
+    }, 1000);
+
+    function getState(){
+        console.log("get state routine...");
+        //Contact REST endpoint on the server
+        $.get( "/workstation/historic", function( data ) {
+            dataObj = JSON.parse(data);
+            console.log(dataObj);
+            htmlTable=getHtmlTable(dataObj);
+            $("#log").html(htmlTable);
+        });
+    }
+    function getHtmlTable(dataObj){
+        var tb="<table>\n" +
+            "  <tr>\n" +
+            "    <th>Time</th>\n" +
+            "    <th>Spring Count</th>\n" +
+            "    <th>Cylinder Count</th>\n" +
+            "    <th>Valve Count</th>\n" +
+            "    <th>Total Count</th>\n" +
+            "  </tr>";
+
+        for(var i in dataObj)
+        {
+            var Time = dataObj[i][0];
+            var SpringCount = dataObj[i][1];
+            var CylinderCount = dataObj[i][2];
+            var ValveCount = dataObj[i][3];
+            var TotalCount = dataObj[i][4];
+            tb+="<tr><td>"+Time+"</td><td>"+SpringCount+"</td><td>"+CylinderCount+"</td><td>"+ValveCount+"</td><td>"+TotalCount+"</td>";
+        }
+        tb+="</table>";
+        return tb;
+    }
+</script>
+</body>
+</html>

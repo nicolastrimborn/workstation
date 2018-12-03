@@ -2,7 +2,7 @@
 <html>
 <head>
     <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
-    <a href="/index">Get request</a> <a href="/state">State</a> <a href="/events">Events</a> <a href="/dashboard">Dashboard</a>
+    <a href="/state">States</a> <a href="/events">Events</a> <a href="/history">History</a> <a href="/dashboard">Dashboard</a>
     <style>
         table {
             font-family: arial, sans-serif;
@@ -35,7 +35,7 @@
     function getState(){
         console.log("get state routine...");
         //Contact REST endpoint on the server
-        $.get( "/workstation/states", function( data ) {
+        $.get( "/workstation/allstates", function( data ) {
             dataObj = JSON.parse(data);
             console.log(dataObj);
             htmlTable=getHtmlTable(dataObj);

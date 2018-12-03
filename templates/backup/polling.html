@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
+    <a href="/index">Get request</a> <a href="/robots">Robots page</a>  <a href="/polling">Polling example</a>
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+    <title>III client - test1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+</head>
+<body>
+<h1>Polling example</h1>
+<p>Retrieves every second all robots in the system</p>
+<div id="log"> </div>
+
+<script>
+    window.setInterval(function(){
+        getState()
+    }, 1000);
+
+    function getState(){
+        console.log("get state routine...");
+        //Contact REST endpoint on the server
+        $.get( "/workstation/state", function( data ) {
+            dataObj = JSON.parse(data);
+            console.log(dataObj);
+            htmlTable=getHtmlTable(dataObj);
+            $("#log").html(htmlTable);
+        });
+    }
+    function getHtmlTable(dataObj){
+        var tb="<table>\n" +
+            "  <tr>\n" +
+            "    <th>Id</th>\n" +
+            "    <th>State</th>\n" +
+            "    <th>Time</th>\n" +
+            "  </tr>";
+
+        for(var i in dataObj)
+        {
+            var Key = dataObj[i][0];
+            var State = dataObj[i][1];
+            var Time = dataObj[i][2];
+            tb+="<tr><td>"+Key+"</td><td>"+State+"</td><td>"+Time+"</td>";
+        }
+        tb+="</table>";
+        return tb;
+    }
+</script>
+</body>
+</html>

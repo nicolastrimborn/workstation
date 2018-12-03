@@ -52,6 +52,14 @@ c.execute("""CREATE TABLE event (
 	        Time TIMESTAMP
             )""")
 
+c.execute("""CREATE TABLE pallet_history (
+            Time TIMESTAMP,
+	        ValveCount INTEGER,
+	        CylinderCount INTEGER,
+	        SpringCount INTEGER,
+	        TotalCount INTEGER
+            )""")
+
 # Adds 6 fixed rows
 for i in range(6):
     with conn:
@@ -59,7 +67,7 @@ for i in range(6):
 
 @app.route('/<string:page_name>/')
 def static_page(page_name):
-    allowed_pages = ['index', 'polling', 'robots', 'state', 'events', 'dashboard']
+    allowed_pages = ['index', 'polling', 'robots', 'state', 'events', 'dashboard', 'history']
     if page_name in allowed_pages:
         return render_template('{0}.html'.format(page_name))
     else:
@@ -83,7 +91,7 @@ def stateHandler():
         c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': state,'Time':time})
 
     # Function to get the last state on the SQL table
-    def getStateFromSQL():
+    def getLastStateFromSQL():
         c = conn.cursor()
         # c.execute("SELECT * FROM workstation WHERE State=:state", {'state': 'Idle'})
         # c.execute("SELECT * FROM workstation WHERE 1")
@@ -105,8 +113,8 @@ def stateHandler():
             elif TabStates[i]=="Error":
                 E = E + ((TabTimes[i + 1] - TabTimes[i]).seconds)
 
-        #Return the times spent on each element
-        return [W, I, E, W+I+E]
+        #Return the times spent on each element (0:time spent in Working)
+        return [W, I, E, (W+I+E), W/(W+I+E), I/(W+I+E), E/(W+I+E)]
 
     # Handle the GET and POST requests and update the HMI
     if request.method=='POST':
@@ -123,18 +131,27 @@ def stateHandler():
         ArrayStates.append(newState)
         ArrayTimes.append(datetime.strptime(time,'%Y-%m-%dT%H:%M:%S.%f'))
         StatesProportions=(TimeSpentInEachState(ArrayStates, ArrayTimes))
+        StatesProportions[5]
         timeExceeded = False
         return cnvMsg_str
     elif request.method=='GET':
         #print ("(GET Request) Workstation State:")
         time = datetime.now().isoformat()
-        cnvMsg = getStateFromSQL()
+        cnvMsg = getLastStateFromSQL()
         cnvMsg_str = json.dumps(cnvMsg)
         return cnvMsg_str
 
+@app.route('/workstation/allstates', methods= ['GET'])
+def statesHandler():
+    c = conn.cursor()
+    c.execute("SELECT * FROM workstation")
+    time = datetime.now().isoformat()
+    cnvMsg = c.fetchall()
+    cnvMsg_str = json.dumps(cnvMsg)
+    return cnvMsg_str
+
 @app.route('/workstation/pallets', methods=['POST','GET'])
 def WorkstationHandler():
-
     def get_Pallets():
         c = conn.cursor()
         c.execute("SELECT * FROM workstation_pallets")
@@ -190,6 +207,39 @@ def eventHandler():
     elif request.method=='GET':
         #print ("(Get Req) Send WS Events:")
         cnvMsg = getEventFromSQL()
+        cnvMsg_str = json.dumps(cnvMsg)
+        #print(cnvMsg)
+        return cnvMsg_str
+
+#Message format eg. json={"counting"[spring.cylinder,valve, total]}
+@app.route('/workstation/historic', methods=['POST','GET'])
+def historyHandler():
+    def addPalletHistorySQL(time, springCount, cylinderCount, valveCount, totalCount):
+        with conn:
+            c.execute("INSERT INTO pallet_history VALUES (:servertime , :SpringCount, :CylinderCount, :ValveCount, :TotalCount)",
+                      {'servertime':time, 'SpringCount': springCount, 'CylinderCount': cylinderCount,'ValveCount':valveCount, 'TotalCount': totalCount})
+
+    def getHistoryFromSQL():
+        c = conn.cursor()
+        c.execute("SELECT * FROM pallet_history")
+        return c.fetchall()
+
+    if request.method=='POST':
+        content = request.json
+        print ("(Post Req) Historic" , content)
+        springCount = content["counting"][0]
+        cylinderCount = content["counting"][1]
+        valveCount = content["counting"][2]
+        totalCount = content["counting"][3]
+        time = datetime.now().isoformat()
+        addPalletHistorySQL(time, springCount, cylinderCount, valveCount, totalCount)
+        cnvMsg = {'time': time, 'springCount': springCount, 'cylinderCount':cylinderCount, 'valveCount':valveCount}
+        cnvMsg_str = json.dumps(cnvMsg)
+        return cnvMsg_str
+
+    elif request.method=='GET':
+        print ("(Get Req) Send WS Events:")
+        cnvMsg = getHistoryFromSQL()
         cnvMsg_str = json.dumps(cnvMsg)
         #print(cnvMsg)
         return cnvMsg_str

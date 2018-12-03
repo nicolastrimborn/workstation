@@ -17,12 +17,12 @@
         }
         /* Header/Blog Title */
         .header {
-            padding: 30px;
+            padding: 0px;
             text-align: center;
             background: white;
         }
         .header h1 {
-            font-size: 50px;
+            font-size: 30px;
         }
         /* Style the top navigation bar */
         .topnav {
@@ -77,13 +77,7 @@
             display: table;
             clear: both;
         }
-        /* Footer */
-        .footer {
-            padding: 20px;
-            text-align: center;
-            background: #ddd;
-            margin-top: 20px;
-        }
+
         /* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other */
         @media screen and (max-width: 800px) {
             .leftcolumn, .rightcolumn {
@@ -131,37 +125,28 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Pallet Workstation</h1>
-    </div>
+    <div class="header"></div>
     <div class="topnav">
         <a href="/state">States</a>
         <a href="/events">Events</a>
         <a href="/history">History</a>
         <a href="/dashboard">Dashboard</a>
     </div>
-
     <div class="row">
         <div class="leftcolumn">
             <div class="card">
                 <h2>Current Pallets</h2>
                 <h5> Current Pallets in Workstation</h5>
                 <div id="log"> </div>
-                <p>Some text..</p>
             </div>
         </div>
         <div class="rightcolumn">
             <div class="card">
                 <h2>Current State</h2>
                 <div id="currentstate" style="height:100px;">State</div>
-                <p>Current state of workstation</p>
             </div>
             <div id="container" style="height: 500px; width: 100%;"></div>
         </div>
-    </div>
-    <div class="footer">
-        <span id="spanTime"></span>
-        <h2>Footer</h2>
     </div>
     <script>
         //This Script updates the current state of the Workstation.
@@ -235,12 +220,11 @@
         }
 
         function getTimesInState(){
-            console.log("time in states");
             //Contact REST endpoint on the server
             $.get( "/workstation/oeevalues", function( data ) {
-                dataObj = JSON.parse(data);
-                console.log(dataObj);
-                updatePie("container", dataObj);
+                dataObj3 = JSON.parse(data);
+                console.log(dataObj3);
+                updatePie("container", dataObj3);
             });
         }
         function updatePie(id, dataObj) {
@@ -248,9 +232,9 @@
             anychart.onDocumentReady(function () {
                 // create data
                 var data = [
-                    {x: "Working", value: dataObj[0][2], normal: {fill: "#1bba43"}},
-                    {x: "Idle", value: dataObj[1][2], normal: {fill: "#dee830"}},
-                    {x: "Error", value: dataObj[2][2], normal: {fill: "#cc2418"}},
+                    {x: "Idle", value: dataObj[0][2], normal: {fill: "#ffb90f"}},
+                    {x: "Working", value: dataObj[1][2], normal: {fill: "#66cd00"}},
+                    {x: "Error", value: dataObj[2][2], normal: {fill: "#ff4040"}},
                 ];
 
                 // create a pie chart and set the data
@@ -258,15 +242,15 @@
 
                 /* set the inner radius
                 (to turn the pie chart into a doughnut chart)*/
-                chart.innerRadius("30%");
+                chart.innerRadius("35%");
 
                 // set the chart title
-                chart.title("Machine OEE");
+                chart.title("Workstation OEE");
 
                 // set the container id
                 chart.container("container");
                 var label = anychart.standalones.label();
-                label.text("State Proportion");
+                label.text("Percentage Time in State");
                 label.width("100%");
                 label.height("100%");
                 label.fontColor("#60727b");

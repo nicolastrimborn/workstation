@@ -17,7 +17,10 @@ import time
 #Import of the libraries for multithreading
 import threading
 
-timeEachState = {"idle":0, "working":0, "error":0}
+#timeEachState = {"idle":0, "working":0, "error":0}
+ArrayStates=[]
+ArrayTimes=[]
+StatesProportions=[]
 
 timeX = 2
 timeY = 3
@@ -68,6 +71,9 @@ def stateHandler():
 
     global timeEachState
     global timeExceeded
+    global ArrayStates
+    global ArrayTimes
+    global StatesProportions
 
     # Function to add a state to the SQL table
     def addStateSQL(state, time):
@@ -84,6 +90,24 @@ def stateHandler():
         c.execute("SELECT * FROM workstation ORDER BY Key DESC LIMIT 1")
         return c.fetchall()
 
+    #Function to compute the time spent on each state
+    def TimeSpentInEachState(TabStates, TabTimes):
+
+        #Initialize the time counters
+        W, I, E = 0, 0, 0
+
+        #Counting the time spent on each state
+        for i in range(len(TabStates)-1):
+            if TabStates[i]=="Working":
+                W = W + ((TabTimes[i + 1] - TabTimes[i]).seconds)
+            elif TabStates[i]=="Idle":
+                I = I + ((TabTimes[i + 1] - TabTimes[i]).seconds)
+            elif TabStates[i]=="Error":
+                E = E + ((TabTimes[i + 1] - TabTimes[i]).seconds)
+
+        #Return the times spent on each element
+        return [W, I, E, W+I+E]
+
     # Handle the GET and POST requests and update the HMI
     if request.method=='POST':
         content = request.json
@@ -95,12 +119,10 @@ def stateHandler():
         addStateSQL(newState, time)
         cnvMsg = {'state': newState, 'serverTime':time}
         cnvMsg_str = json.dumps(cnvMsg)
-        #if Flag:
-        #    #Specialcomputation for the beggining
-        #else:
-        #    #Normalcomputation
-        #    Flag=False
-        #    timeEachState[newState] = timeEachState[newState] + time
+
+        ArrayStates.append(newState)
+        ArrayTimes.append(datetime.strptime(time,'%Y-%m-%dT%H:%M:%S.%f'))
+        StatesProportions=(TimeSpentInEachState(ArrayStates, ArrayTimes))
         timeExceeded = False
         return cnvMsg_str
     elif request.method=='GET':
@@ -126,8 +148,6 @@ def WorkstationHandler():
 
                 except:
                     c.execute("UPDATE workstation_pallets SET Content = :Contents WHERE Slot =:Index", {'Contents': 'Empty', 'Index': i})
-
-
 
     if request.method=='POST':
         content = request.json
@@ -186,14 +206,25 @@ def checkElapsedTimeAlarms():
         c.execute("SELECT "+selectColumn+" FROM "+table+" ORDER BY "+sortBy+" DESC LIMIT 1")
         return c.fetchall()
 
+    def get_last2_items(table, selectColumn, sortBy):
+        c = conn.cursor()
+        c.execute("select * from "+table+" where id=(select max(id)-1 from "+table+")")
+        return c.fetchall()
+
     def getLastStateSQL():
         return get_last_item('workstation','*','time')
 
+    def getLastTwoStatesSQL():
+        return get_last2_items('workstation', '*', 'time')
+
     try:
         lastStateSQL = getLastStateSQL()
+        #last2StateSQL = getLastTwoStatesSQL()
+        #print (last2StateSQL)
         currentServerTime = datetime.strptime(datetime.now().isoformat(),'%Y-%m-%dT%H:%M:%S.%f')
         lastStateTime = datetime.strptime(lastStateSQL[0][2],'%Y-%m-%dT%H:%M:%S.%f')
         timeInterval = currentServerTime - lastStateTime
+        #print (last2StateSQL)
 
         if (lastStateSQL[0][1] != "Working"):
             if (lastStateSQL[0][1] == "Idle") and (timeInterval.seconds > timeX) and not(timeExceeded):
@@ -202,7 +233,7 @@ def checkElapsedTimeAlarms():
                 timeExceeded = True
 
             elif (lastStateSQL[0][1] == "Error") and (timeInterval.seconds > timeY) and not(timeExceeded):
-                print(timeInterval.seconds)
+                #print(timeInterval.seconds)
                 with conn:
                     c.execute("INSERT INTO event VALUES (null, :AlarmID, :Event, :Time)", {'AlarmID': 5, 'Event': serverAlarms[1], 'Time':currentServerTime})
                 timeExceeded = True

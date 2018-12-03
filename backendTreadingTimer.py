@@ -67,6 +67,7 @@ def static_page(page_name):
 def stateHandler():
 
     global timeEachState
+    global timeExceeded
 
     # Function to add a state to the SQL table
     def addStateSQL(state, time):
@@ -100,6 +101,7 @@ def stateHandler():
         #    #Normalcomputation
         #    Flag=False
         #    timeEachState[newState] = timeEachState[newState] + time
+        timeExceeded = False
         return cnvMsg_str
     elif request.method=='GET':
         #print ("(GET Request) Workstation State:")
@@ -193,21 +195,17 @@ def checkElapsedTimeAlarms():
         lastStateTime = datetime.strptime(lastStateSQL[0][2],'%Y-%m-%dT%H:%M:%S.%f')
         timeInterval = currentServerTime - lastStateTime
 
-        if (lastStateSQL[0][1] == "Idle") and (not((timeInterval.seconds) > timeX)):
-            if not(timeExceeded):
+        if (lastStateSQL[0][1] != "Working"):
+            if (lastStateSQL[0][1] == "Idle") and (timeInterval.seconds > timeX) and not(timeExceeded):
+                with conn:
+                    c.execute("INSERT INTO event VALUES (null, :AlarmID, :Event, :Time)", {'AlarmID': 4, 'Event': serverAlarms[0], 'Time':currentServerTime})
                 timeExceeded = True
-                if timeExceeded:
-                    with conn:
-                        c.execute("INSERT INTO event VALUES (null, :AlarmID, :Event, :Time)", {'AlarmID': 4, 'Event': serverAlarms[0], 'Time':currentServerTime})
-                timeExceeded = False
 
-        '''
-            if (lastStateSQL[0][1] == "Error" and not(timeInterval.seconds) > timeY):
+            elif (lastStateSQL[0][1] == "Error") and (timeInterval.seconds > timeY) and not(timeExceeded):
                 print(timeInterval.seconds)
                 with conn:
                     c.execute("INSERT INTO event VALUES (null, :AlarmID, :Event, :Time)", {'AlarmID': 5, 'Event': serverAlarms[1], 'Time':currentServerTime})
                 timeExceeded = True
-            '''
     except:
         print("stuck")
 

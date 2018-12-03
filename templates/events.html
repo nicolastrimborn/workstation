@@ -42,7 +42,7 @@
         //Contact REST endpoint on the server
         $.get( "/workstation/event", function( data ) {
             dataObj = JSON.parse(data);
-            console.log(dataObj);
+            //console.log(dataObj);
             htmlTable=getHtmlTable(dataObj);
             $("#log").html(htmlTable);
         });

@@ -3,7 +3,9 @@
 <head>
     <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
-    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/v8/js/anychart-core.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/v8/js/anychart-pie.min.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -46,12 +48,12 @@
         /* Left column */
         .leftcolumn {
             float: left;
-            width: 65%;
+            width: 55%;
         }
         /* Right column */
         .rightcolumn {
             float: left;
-            width: 35%;
+            width: 45%;
             background-color: #f1f1f1;
             padding-left: 20px;
         }
@@ -104,6 +106,12 @@
             text-align: center;
             font-size: 40px;
         }
+        html, body, #container {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
 
         /* Css  Properties for Pallets Table */
         table {
@@ -148,7 +156,7 @@
                 <div id="currentstate" style="height:100px;">State</div>
                 <p>Current state of workstation</p>
             </div>
-            <div id="chartContainer" style="height: 300px; width: 100%;"></div>
+            <div id="container" style="height: 500px; width: 100%;"></div>
         </div>
     </div>
     <div class="footer">
@@ -160,6 +168,7 @@
         window.setInterval(function(){
             getState();
             getPallets();
+            getTimesInState();
         }, 1000);
 
         function getState(){
@@ -168,7 +177,7 @@
             $.get( "/workstation/state", function( data ) {
                 //Message format = [id, state, time]
                 dataObj = JSON.parse(data);
-                console.log(dataObj);
+                //console.log(dataObj);
                 updateStatusDisplay("currentstate", dataObj);
             });
         }
@@ -193,9 +202,8 @@
                 el.style.color = "black";
                 el.style.backgroundColor = "#ff4040";
             } else {
-                el.style.backgroundColor = "#ff1493";
-                console.log("message error")
-                console.log(State);
+                el.style.backgroundColor = "aaa";
+                el.innerText = " ";
             }
         }
 
@@ -204,7 +212,7 @@
             //Contact REST endpoint on the server
             $.get( "/workstation/pallets", function( data ) {
                 dataObj = JSON.parse(data);
-                console.log(dataObj);
+                //console.log(dataObj);
                 htmlTable=getHtmlTable(dataObj);
                 $("#log").html(htmlTable);
             });
@@ -225,32 +233,53 @@
             tb+="</table>";
             return tb;
         }
-    </script>
-    <script type="text/javascript">
-        window.onload = function () {
-            var chart = new CanvasJS.Chart("chartContainer",
-                {
-                    title:{
-                        text: "Machine OEE"
-                    },
-                    legend: {
-                        maxWidth: 350,
-                        itemWidth: 120
-                    },
-                    data: [
-                        {
-                            type: "pie",
-                            showInLegend: false,
-                            legendText: "{indexLabel}",
-                            dataPoints: [
-                                { y: 10, indexLabel: "Idle" },
-                                { y: 40, indexLabel: "Error" },
-                                { y: 30, indexLabel: "Running" },
-                            ]
-                        }
-                    ]
-                });
-            chart.render();
+
+        function getTimesInState(){
+            console.log("time in states");
+            //Contact REST endpoint on the server
+            $.get( "/workstation/oeevalues", function( data ) {
+                dataObj = JSON.parse(data);
+                console.log(dataObj);
+                updatePie("container", dataObj);
+            });
+        }
+        function updatePie(id, dataObj) {
+            document.getElementById(id).innerText = "";
+            anychart.onDocumentReady(function () {
+                // create data
+                var data = [
+                    {x: "Working", value: dataObj[0], normal: {fill: "#1bba43"}},
+                    {x: "Idle", value: dataObj[1], normal: {fill: "#dee830"}},
+                    {x: "Error", value: dataObj[2], normal: {fill: "#cc2418"}},
+                ];
+
+                // create a pie chart and set the data
+                var chart = anychart.pie(data);
+
+                /* set the inner radius
+                (to turn the pie chart into a doughnut chart)*/
+                chart.innerRadius("30%");
+
+                // set the chart title
+                chart.title("Machine OEE");
+
+                // set the container id
+                chart.container("container");
+                var label = anychart.standalones.label();
+                label.text("State Proportion");
+                label.width("100%");
+                label.height("100%");
+                label.fontColor("#60727b");
+                label.hAlign("center");
+                label.vAlign("middle");
+                // set the label as the center content
+                chart.center().content(label);
+
+                // initiate drawing the chart
+                chart.draw();
+            });
+            // create and configure a label
+
         }
     </script>
 </body>

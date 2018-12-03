@@ -114,12 +114,12 @@ def stateHandler():
                 E = E + ((TabTimes[i + 1] - TabTimes[i]).seconds)
 
         #Return the times spent on each element (0:time spent in Working)
-        return [W, I, E, (W+I+E), W/(W+I+E), I/(W+I+E), E/(W+I+E)]
+        return [W, I, E, (W+I+E)]
 
     # Handle the GET and POST requests and update the HMI
     if request.method=='POST':
         content = request.json
-        print ("(Post Req) Updated State recieved: ", content)
+        #print ("(Post Req) Updated State recieved: ", content)
         newState=content["state"]
         #now = datetime.datetime.now()
         #time= now.isoformat()
@@ -127,11 +127,10 @@ def stateHandler():
         addStateSQL(newState, time)
         cnvMsg = {'state': newState, 'serverTime':time}
         cnvMsg_str = json.dumps(cnvMsg)
-
         ArrayStates.append(newState)
         ArrayTimes.append(datetime.strptime(time,'%Y-%m-%dT%H:%M:%S.%f'))
         StatesProportions=(TimeSpentInEachState(ArrayStates, ArrayTimes))
-        StatesProportions[5]
+        print(StatesProportions)
         timeExceeded = False
         return cnvMsg_str
     elif request.method=='GET':
@@ -169,7 +168,7 @@ def WorkstationHandler():
     if request.method=='POST':
         content = request.json
         PalletsArray=content["workstation"]
-        print(PalletsArray)
+        #print(PalletsArray)
         updatePallets(PalletsArray)
         time= datetime.now().isoformat()
         cnvMsg = {'workstation': 'empty','serverTime':time}
@@ -195,7 +194,7 @@ def eventHandler():
 
     if request.method=='POST':
         content = request.json
-        print ("(Post Req) New Event: " , content)
+        #print ("(Post Req) New Event: " , content)
         alarmID = content["AlarmID"]
         AlarmText = content["AlarmText"]
         time = datetime.now().isoformat()
@@ -226,7 +225,7 @@ def historyHandler():
 
     if request.method=='POST':
         content = request.json
-        print ("(Post Req) Historic" , content)
+        #print ("(Post Req) Historic" , content)
         springCount = content["counting"][0]
         cylinderCount = content["counting"][1]
         valveCount = content["counting"][2]
@@ -238,11 +237,19 @@ def historyHandler():
         return cnvMsg_str
 
     elif request.method=='GET':
-        print ("(Get Req) Send WS Events:")
+        #print ("(Get Req) Send WS Events:")
         cnvMsg = getHistoryFromSQL()
         cnvMsg_str = json.dumps(cnvMsg)
         #print(cnvMsg)
         return cnvMsg_str
+
+@app.route('/workstation/oeevalues', methods= ['GET'])
+def statesProportionHandler():
+    print("In StatePorportionHandler")
+    cnvMsg = StatesProportions
+    print(cnvMsg)
+    cnvMsg_str = json.dumps(cnvMsg)
+    return cnvMsg_str
 
 
 def checkElapsedTimeAlarms():
@@ -288,7 +295,7 @@ def checkElapsedTimeAlarms():
                     c.execute("INSERT INTO event VALUES (null, :AlarmID, :Event, :Time)", {'AlarmID': 5, 'Event': serverAlarms[1], 'Time':currentServerTime})
                 timeExceeded = True
     except:
-        print("stuck")
+        True
 
     threading.Timer(0.5, checkElapsedTimeAlarms).start()
 

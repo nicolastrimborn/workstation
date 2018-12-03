@@ -176,9 +176,9 @@
             //Contact REST endpoint on the server
             $.get( "/workstation/state", function( data ) {
                 //Message format = [id, state, time]
-                dataObj = JSON.parse(data);
+                dataObj1 = JSON.parse(data);
                 //console.log(dataObj);
-                updateStatusDisplay("currentstate", dataObj);
+                updateStatusDisplay("currentstate", dataObj1);
             });
         }
         function updateStatusDisplay(id, dataObj) {
@@ -211,9 +211,9 @@
             console.log("get pallets routine...");
             //Contact REST endpoint on the server
             $.get( "/workstation/pallets", function( data ) {
-                dataObj = JSON.parse(data);
+                dataObj2 = JSON.parse(data);
                 //console.log(dataObj);
-                htmlTable=getHtmlTable(dataObj);
+                htmlTable=getHtmlTable(dataObj2);
                 $("#log").html(htmlTable);
             });
         }
@@ -248,9 +248,9 @@
             anychart.onDocumentReady(function () {
                 // create data
                 var data = [
-                    {x: "Working", value: dataObj[0], normal: {fill: "#1bba43"}},
-                    {x: "Idle", value: dataObj[1], normal: {fill: "#dee830"}},
-                    {x: "Error", value: dataObj[2], normal: {fill: "#cc2418"}},
+                    {x: "Working", value: dataObj[0][2], normal: {fill: "#1bba43"}},
+                    {x: "Idle", value: dataObj[1][2], normal: {fill: "#dee830"}},
+                    {x: "Error", value: dataObj[2][2], normal: {fill: "#cc2418"}},
                 ];
 
                 // create a pie chart and set the data

@@ -60,10 +60,21 @@ c.execute("""CREATE TABLE pallet_history (
 	        TotalCount INTEGER
             )""")
 
+c.execute("""CREATE TABLE totalTime (
+            State TEXT,
+	        StateTotalTime INTEGER,
+	        DynTime INTEGER
+	        )""")
+
 # Adds 6 fixed rows
 for i in range(6):
     with conn:
         c.execute("INSERT INTO workstation_pallets VALUES ("+str(i)+", null)")
+
+with conn:
+    c.execute("INSERT INTO totalTime VALUES(:State,:StateTotalTime,:DynTime)", {'State':"Idle", 'StateTotalTime':0, 'DynTime':0})
+    c.execute("INSERT INTO totalTime VALUES(:State,:StateTotalTime,:DynTime)", {'State':"Working", 'StateTotalTime':0, 'DynTime':0})
+    c.execute("INSERT INTO totalTime VALUES(:State,:StateTotalTime,:DynTime)", {'State':"Error", 'StateTotalTime':0, 'DynTime':0})
 
 @app.route('/<string:page_name>/')
 def static_page(page_name):
@@ -83,6 +94,16 @@ def stateHandler():
     global ArrayTimes
     global StatesProportions
 
+    def updateTotalTime(state, time1):
+        with conn:
+            c.execute("SELECT StateTotalTime FROM totalTime WHERE State=:State", {'State': state})
+            totalT = c.fetchone()
+            #print("Total T = ", totalT[0])
+            totTime = totalT[0] + time1.seconds
+            c.execute("UPDATE totalTime SET StateTotalTime=:StateTotalTime, DynTime=:DynTime WHERE State=:State",
+                      {'StateTotalTime': totTime,'DynTime':totTime,'State':state})
+            return totTime
+
     # Function to add a state to the SQL table
     def addStateSQL(state, time):
         # previousState = getCurrentState
@@ -90,13 +111,6 @@ def stateHandler():
         # with conn:
         c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': state,'Time':time})
 
-    # Function to get the last state on the SQL table
-    def getLastStateFromSQL():
-        c = conn.cursor()
-        # c.execute("SELECT * FROM workstation WHERE State=:state", {'state': 'Idle'})
-        # c.execute("SELECT * FROM workstation WHERE 1")
-        c.execute("SELECT * FROM workstation ORDER BY Key DESC LIMIT 1")
-        return c.fetchall()
 
     #Function to compute the time spent on each state
     def TimeSpentInEachState(TabStates, TabTimes):
@@ -124,13 +138,29 @@ def stateHandler():
         #now = datetime.datetime.now()
         #time= now.isoformat()
         time= datetime.now().isoformat()
+
+
+
+        ####### New Stuff
+        if(getLastStateFromSQL()):
+            currentState = getLastStateFromSQL()[0]
+            if(currentState):
+                statetime = datetime.strptime(currentState[2],'%Y-%m-%dT%H:%M:%S.%f')
+                time1 = datetime.now() - statetime
+                totalTime = updateTotalTime(currentState[1],time1)
+
+        ####
+
+
+
+
         addStateSQL(newState, time)
         cnvMsg = {'state': newState, 'serverTime':time}
         cnvMsg_str = json.dumps(cnvMsg)
         ArrayStates.append(newState)
         ArrayTimes.append(datetime.strptime(time,'%Y-%m-%dT%H:%M:%S.%f'))
         StatesProportions=(TimeSpentInEachState(ArrayStates, ArrayTimes))
-        print(StatesProportions)
+        #print(StatesProportions)
         timeExceeded = False
         return cnvMsg_str
     elif request.method=='GET':
@@ -245,12 +275,23 @@ def historyHandler():
 
 @app.route('/workstation/oeevalues', methods= ['GET'])
 def statesProportionHandler():
-    print("In StatePorportionHandler")
-    cnvMsg = StatesProportions
-    print(cnvMsg)
-    cnvMsg_str = json.dumps(cnvMsg)
-    return cnvMsg_str
+    def getTotatlTime():
+        c = conn.cursor()
+        c.execute("SELECT * FROM totalTime")
+        totalTimes = c.fetchall()
+        print("Test: ", totalTimes)
+        return totalTimes
 
+    #print("In StatePorportionHandler")
+    #cnvMsg = StatesProportions
+    #print(cnvMsg)
+    #cnvMsg_str = json.dumps(cnvMsg)
+    totalTimes = getTotatlTime()
+    #StatesProportions = [totalTimes["Idle"],]
+
+    #StatesProportions = getTotatlTime()
+    cnvMsg_str = json.dumps(totalTimes)
+    return cnvMsg_str
 
 def checkElapsedTimeAlarms():
     global timeX
@@ -297,13 +338,43 @@ def checkElapsedTimeAlarms():
     except:
         True
 
-    threading.Timer(0.5, checkElapsedTimeAlarms).start()
+# Function to get the last state on the SQL table
+def getLastStateFromSQL():
+    c = conn.cursor()
+    # c.execute("SELECT * FROM workstation WHERE State=:state", {'state': 'Idle'})
+    # c.execute("SELECT * FROM workstation WHERE 1")
+    c.execute("SELECT * FROM workstation ORDER BY Key DESC LIMIT 1")
+    return c.fetchall()
 
-checkElapsedTimeAlarms()
+
+def checkTotalTime():
+    #print("test: ", getLastStateFromSQL())
+    if(getLastStateFromSQL()):
+        current_state = getLastStateFromSQL()[0]
+        #print("test:", current_state)
+        if(current_state):
+            #print("was here")
+            now = datetime.now()
+            stateTime = datetime.strptime(current_state[2],'%Y-%m-%dT%H:%M:%S.%f')
+            time1 = now - stateTime
+            with conn:
+                c.execute("SELECT StateTotalTime FROM totalTime WHERE State=:State", {'State': current_state[1]})
+                totalT = c.fetchone()
+                totalTime1 = totalT[0] + time1.seconds
+
+                c.execute("UPDATE totalTime SET DynTime=:DynTime WHERE State=:State",
+                          {'DynTime': totalTime1, 'State':current_state[1]})
+            print("test:", totalTime1)
+
+def pollingUpdates():
+    checkElapsedTimeAlarms()
+    checkTotalTime()
+    threading.Timer(0.5, pollingUpdates).start()
+
 
 if __name__ == '__main__':
+    pollingUpdates()
     app.run(host= '192.168.0.11')
     #app.run(host= '127.0.0.1')
-
     conn.close()
 

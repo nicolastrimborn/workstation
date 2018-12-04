@@ -124,74 +124,74 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
-    <title>Workstation History</title>
+    <title>Workstation Events</title>
 </head>
 <body>
-<div class="header"></div>
-<div class="topnav">
-    <a href="/state">States</a>
-    <a href="/events">Events</a>
-    <a href="/history">History</a>
-    <a href="/dashboard">Dashboard</a>
-    <a href="/pallethistory">Pallet History</a>
-    <a href="/statehistory">State History</a>
-</div>
-<div class="row">
-    <div class="leftcolumn">
-        <div class="card">
-            <h2>Workstation Pallet History</h2>
-            <h5>Retrieves History of Pallets</h5>
-            <div id="log"> </div>
+    <div class="header"></div>
+    <div class="topnav">
+        <a href="/state">States</a>
+        <a href="/events">Events</a>
+        <a href="/history">History</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/pallethistory">Pallet History</a>
+        <a href="/statehistory">State History</a>
+    </div>
+    <div class="row">
+        <div class="leftcolumn">
+            <div class="card">
+                <h2>Workstation Pallet History</h2>
+                <h5>Workstation pallet history for given time range</h5>
+                <div id="log"> </div>
+            </div>
+        </div>
+        <div class="rightcolumn">
+            <div class="card">
+                <h2>DateRangeSelect</h2>
+                <input type="text" name="datetimes" style="width: 100%"/>
+            </div>
         </div>
     </div>
-    <div class="rightcolumn">
-        <div class="card">
-            <h2>DateRangeSelect</h2>
-            <input type="text" name="datetimes" style="width: 100%"/>
-        </div>
-    </div>
-    <div class="rightcolumn">
-    </div>
-</div>
-
 <script>
-    window.setInterval(function(){
-        getState()
-    }, 1000);
 
-    function getState(){
-        console.log("get state routine...");
-        //Contact REST endpoint on the server
-        $.get( "/workstation/historic", function( data ) {
-            dataObj = JSON.parse(data);
-            //console.log(dataObj);
-            htmlTable=getHtmlTable(dataObj);
-            $("#log").html(htmlTable);
-        });
-    }
-    function getHtmlTable(dataObj){
+    function htmlTableRange(dataObj){
         var tb="<table>\n" +
             "  <tr>\n" +
-            "    <th>Time</th>\n" +
-            "    <th>Spring Count</th>\n" +
-            "    <th>Cylinder Count</th>\n" +
+            "    <th>When</th>\n" +
             "    <th>Valve Count</th>\n" +
-            "    <th>Total Count</th>\n" +
+            "    <th>Cylinder Count</th>\n" +
+            "    <th>Spring Count</th>\n" +
+            "    <th>Total</th>\n" +
             "  </tr>";
 
         for(var i in dataObj)
         {
             var Time = dataObj[i][0];
-            var SpringCount = dataObj[i][1];
-            var CylinderCount = dataObj[i][2];
-            var ValveCount = dataObj[i][3];
-            var TotalCount = dataObj[i][4];
-            tb+="<tr><td>"+Time+"</td><td>"+SpringCount+"</td><td>"+CylinderCount+"</td><td>"+ValveCount+"</td><td>"+TotalCount+"</td>";
+            var valveCount = dataObj[i][1];
+            var cyclinderCount = dataObj[i][2];
+            var SpringCount = dataObj[i][3];
+            var Total = dataObj[i][4];
+            tb+="<tr><td>"+Time+"</td><td>"+valveCount+"</td><td>"+cyclinderCount+"</td><td>"+SpringCount+"</td><td>"+Total+"</td>";
         }
         tb+="</table>";
         return tb;
+
     }
+
+    $.postJSON = function(url, data) {
+        return jQuery.ajax({
+            'type': 'POST',
+            'url': url,
+            'contentType': 'application/json',
+            'data': data,
+            'dataType': 'json',
+            'success': function(data) {
+                console.log(data);
+                htmlTable = htmlTableRange(data);
+                $("#log").html(htmlTable);
+            }
+        });
+    };
+
     $('input[name="datetimes"]').daterangepicker({
         "showDropdowns": true,
         "timePicker": true,
@@ -209,6 +209,7 @@
             'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
         },
         "locale": {
+            "cancelLabel": 'Clear',
             "format": "DD/MM/YYYY HH:mm:ss" ,
             "separator": " - ",
             "applyLabel": "Apply",
@@ -242,11 +243,17 @@
             ],
             "firstDay": 1
         },
-        "alwaysShowCalendars": false,
+        "alwaysShowCalendars": true,
 
         }, function(start, end, label) {
-        console.log('New date range selected: ' + start.format('YYYY-MM-DD HH:mm:ss') + ' to ' + end.format('YYYY-MM-DD HH:mm:ss') + ' (predefined range: ' + label + ')');
-    });
+            console.log('New date range selected: ' + start.format('YYYY-MM-DDTHH:mm:ss') + ' to ' + end.format('YYYY-MM-DDTHH:mm:ss') + ' (predefined range: ' + label + ')');
+            //var reply = $.post("/workstation/staterange", {"Begin": start.format('YYYY-MM-DDTHH:mm:ss'), "End": end.format('YYYY-MM-DDTHH:mm:ss')});
+            var sendstring = {Begin: start.format('YYYY-MM-DDTHH:mm:ss'), End: end.format('YYYY-MM-DDTHH:mm:ss')};
+            var reply1 = $.postJSON('/workstation/palletrange', JSON.stringify(sendstring));
+
+            }
+    );
+
 </script>
 </body>
 </html>

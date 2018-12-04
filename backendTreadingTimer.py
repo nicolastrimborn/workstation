@@ -34,7 +34,8 @@ c = conn.cursor()
 c.execute("""CREATE TABLE workstation (
 	        Key INTEGER PRIMARY KEY,
 	        State TEXT,
-	        Time TIMESTAMP 
+	        Time TIMESTAMP,
+	        ShortTime Text
             )""")
 
 c.execute("""CREATE TABLE workstation_pallets (
@@ -54,7 +55,8 @@ c.execute("""CREATE TABLE pallet_history (
 	        ValveCount INTEGER,
 	        CylinderCount INTEGER,
 	        SpringCount INTEGER,
-	        TotalCount INTEGER
+	        TotalCount INTEGER,
+	        ShortTime Text
             )""")
 
 c.execute("""CREATE TABLE totalTime (
@@ -75,7 +77,7 @@ with conn:
 
 @app.route('/<string:page_name>/')
 def static_page(page_name):
-    allowed_pages = ['index', 'polling', 'robots', 'state', 'events', 'dashboard', 'history']
+    allowed_pages = ['index', 'polling', 'robots', 'state', 'events', 'dashboard', 'history','pallethistory', 'statehistory']
     if page_name in allowed_pages:
         return render_template('{0}.html'.format(page_name))
     else:
@@ -105,8 +107,9 @@ def stateHandler():
     def addStateSQL(state, time):
         # previousState = getCurrentState
         # if(previousState[0][0] != state):
-        # with conn:
-        c.execute("INSERT INTO workstation VALUES (null, :State, :Time)", {'State': state,'Time':time})
+        with conn:
+            shorttime = datetime.strptime(time.split(".")[0],'%Y-%m-%dT%H:%M:%S').isoformat()
+            c.execute("INSERT INTO workstation VALUES (null, :State, :Time, :ShortTime)", {'State': state,'Time':time,'ShortTime':shorttime})
 
     # Handle the GET and POST requests and update the HMI
     if request.method=='POST':
@@ -230,8 +233,9 @@ def historyHandler():
     #Adds pallet history to SQL table
     def addPalletHistorySQL(time, springCount, cylinderCount, valveCount, totalCount):
         with conn:
-            c.execute("INSERT INTO pallet_history VALUES (:servertime , :SpringCount, :CylinderCount, :ValveCount, :TotalCount)",
-                      {'servertime':time, 'SpringCount': springCount, 'CylinderCount': cylinderCount,'ValveCount':valveCount, 'TotalCount': totalCount})
+            ShortTime = datetime.strptime(time.split(".")[0],'%Y-%m-%dT%H:%M:%S').isoformat()
+            c.execute("INSERT INTO pallet_history VALUES (:servertime , :SpringCount, :CylinderCount, :ValveCount, :TotalCount, :ShortTime)",
+                      {'servertime':time, 'SpringCount': springCount, 'CylinderCount': cylinderCount,'ValveCount':valveCount, 'TotalCount': totalCount,'ShortTime': ShortTime})
 
     # Returns pallet history from SQL table
     def getHistoryFromSQL():
@@ -282,6 +286,50 @@ def statesProportionHandler():
     #cnvMsg_str = json.dumps(cnvMsg)
     #StatesProportions = [totalTimes["Idle"],]
     #StatesProportions = getTotatlTime()
+
+#json={"Begin":"Begin Range String", "End": "End Range String"}
+@app.route('/workstation/staterange', methods= ['POST'])
+def stateRangeHandler():
+
+    def getStateDateRange(startDate,endDate):
+        sqlSt="SELECT * FROM workstation WHERE ShortTime BETWEEN '"+startDate.isoformat()+"' AND '"+endDate.isoformat()+"'"
+        print (sqlSt)
+        c.execute(sqlSt)
+        return c.fetchall()
+
+    if request.method == 'POST':
+        content = request.json
+        print ("(Post Req) StateRange", content)
+        BeginRange = datetime.strptime(content["Begin"],'%Y-%m-%dT%H:%M:%S')
+        EndRange = datetime.strptime(content["End"],'%Y-%m-%dT%H:%M:%S')
+        cnvMsg = getStateDateRange(BeginRange, EndRange)
+        print(cnvMsg)
+        cnvMsg_str = json.dumps(cnvMsg)
+        #cnvMsg = {'time': "a"}
+        #cnvMsg_str = json.dumps(cnvMsg)
+        return cnvMsg_str
+
+#json={"Begin":"Begin Range String", "End": "End Range String"}
+@app.route('/workstation/palletrange', methods= ['POST'])
+def palletRangeHandler():
+
+    def getStateDateRange(startDate,endDate):
+        sqlSt="SELECT * FROM pallet_history WHERE ShortTime BETWEEN '"+startDate.isoformat()+"' AND '"+endDate.isoformat()+"'"
+        print (sqlSt)
+        c.execute(sqlSt)
+        return c.fetchall()
+
+    if request.method == 'POST':
+        content = request.json
+        print ("(Post Req) StateRange", content)
+        BeginRange = datetime.strptime(content["Begin"],'%Y-%m-%dT%H:%M:%S')
+        EndRange = datetime.strptime(content["End"],'%Y-%m-%dT%H:%M:%S')
+        cnvMsg = getStateDateRange(BeginRange, EndRange)
+        print(cnvMsg)
+        cnvMsg_str = json.dumps(cnvMsg)
+        #cnvMsg = {'time': "a"}
+        #cnvMsg_str = json.dumps(cnvMsg)
+        return cnvMsg_str
 
 # Function to check live alarms
 def checkElapsedTimeAlarms():

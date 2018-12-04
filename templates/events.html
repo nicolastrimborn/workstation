@@ -42,12 +42,12 @@
     /* Left column */
     .leftcolumn {
         float: left;
-        width: 60%;
+        width: 100%;
     }
     /* Right column */
     .rightcolumn {
         float: left;
-        width: 40%;
+        width: 0%;
         background-color: #f1f1f1;
         padding-left: 20px;
     }
@@ -127,35 +127,26 @@
     <title>Workstation Events</title>
 </head>
 <body>
-    <div class="header"></div>
-    <div class="topnav">
-        <a href="/state">States</a>
-        <a href="/events">Events</a>
-        <a href="/history">History</a>
-        <a href="/dashboard">Dashboard</a>
-        <a href="/pallethistory">Pallet History</a>
-        <a href="/statehistory">State History</a>
-    </div>
-    <div class="row">
-        <div class="leftcolumn">
-            <div class="card">
-                <h2>Workstation Events</h2>
-                <h5>Retrieves Workstation Events every Second</h5>
-                <div id="log"> </div>
-            </div>
-        </div>
-        <div class="rightcolumn">
-            <div class="card">
-                <input type="radio" id="stateHistory" name="where" value="test1"> Workstation States
-                <input type="radio" id="palletHistory" name="where" value="test2"> Pallets <br>
-                <h2>DateRangeSelect</h2>
-                <input type="text" name="datetimes" style="width: 100%"/>
-            </div>
+<div class="header"></div>
+<div class="topnav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/state">States</a>
+    <a href="/statehistory">State History</a>
+    <a href="/history">Pallets</a>
+    <a href="/pallethistory">Pallet History</a>
+</div>
+<div class="row">
+    <div class="leftcolumn">
+        <div class="card">
+            <h2>Workstation Events</h2>
+            <h5>Retrieves Workstation Events every Second</h5>
+            <div id="log"> </div>
         </div>
     </div>
+</div>
 <script>
     window.setInterval(function(){
-        //getState()
+        getState()
     }, 1000);
 
     function getState(){
@@ -189,108 +180,6 @@
         return tb;
 
     }
-    function htmlTableRange(dataObj){
-        var tb="<table>\n" +
-            "  <tr>\n" +
-            "    <th>ID</th>\n" +
-            "    <th>State</th>\n" +
-            "    <th>Time</th>\n" +
-            "  </tr>";
-
-        for(var i in dataObj)
-        {
-            var Key = dataObj[i][0];
-            var State = dataObj[i][1];
-            var AlarmText = dataObj[i][2];
-            var Time = dataObj[i][3];
-            tb+="<tr><td>"+Key+"</td><td>"+AlarmID+"</td><td>"+AlarmText+"</td><td>"+Time+"</td>";
-        }
-        tb+="</table>";
-        return tb;
-
-    }
-
-    $.postJSON = function(url, data) {
-        return jQuery.ajax({
-            'type': 'POST',
-            'url': url,
-            'contentType': 'application/json',
-            'data': data,
-            'dataType': 'json',
-            'success': function(data) {
-                console.log(data);
-                htmlTable = htmlTableRange(data);
-                $("#log").html(htmlTable);
-            }
-        });
-    };
-
-    $('input[name="datetimes"]').daterangepicker({
-        "showDropdowns": true,
-        "timePicker": true,
-        "timePicker24Hour": true,
-        "timePickerSeconds": true,
-        "startDate": "04/12/2018",
-        "endDate": "08/12/2018",
-        "opens": "right",
-        ranges: {
-            'Today': [moment(), moment()],
-            'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-            'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-            'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-            'This Month': [moment().startOf('month'), moment().endOf('month')],
-            'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-        },
-        "locale": {
-            "cancelLabel": 'Clear',
-            "format": "DD/MM/YYYY HH:mm:ss" ,
-            "separator": " - ",
-            "applyLabel": "Apply",
-            "cancelLabel": "Cancel",
-            "fromLabel": "From",
-            "toLabel": "To",
-            "customRangeLabel": "Custom",
-            "weekLabel": "W",
-            "daysOfWeek": [
-                "Su",
-                "Mo",
-                "Tu",
-                "We",
-                "Th",
-                "Fr",
-                "Sa"
-            ],
-            "monthNames": [
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December"
-            ],
-            "firstDay": 1
-        },
-        "alwaysShowCalendars": true,
-
-        }, function(start, end, label) {
-            console.log('New date range selected: ' + start.format('YYYY-MM-DDTHH:mm:ss') + ' to ' + end.format('YYYY-MM-DDTHH:mm:ss') + ' (predefined range: ' + label + ')');
-            //var reply = $.post("/workstation/staterange", {"Begin": start.format('YYYY-MM-DDTHH:mm:ss'), "End": end.format('YYYY-MM-DDTHH:mm:ss')});
-            var sendstring = {Begin: start.format('YYYY-MM-DDTHH:mm:ss'), End: end.format('YYYY-MM-DDTHH:mm:ss')};
-            //$.('/workstation/staterange', JSON.stringify(sendstring), function(result){
-
-            //}, 'json');
-            var reply1 = $.postJSON('/workstation/staterange', JSON.stringify(sendstring));
-            //console.log(JSON.stringify(reply1))
-            //console.log(reply1.load())
-            }
-    );
-
 </script>
 </body>
 </html>

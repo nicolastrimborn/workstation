@@ -42,12 +42,12 @@
     /* Left column */
     .leftcolumn {
         float: left;
-        width: 60%;
+        width: 50%;
     }
     /* Right column */
     .rightcolumn {
         float: left;
-        width: 40%;
+        width: 50%;
         background-color: #f1f1f1;
         padding-left: 20px;
     }
@@ -129,18 +129,16 @@
 <body>
     <div class="header"></div>
     <div class="topnav">
+        <<a href="/dashboard">Dashboard</a>
         <a href="/state">States</a>
-        <a href="/events">Events</a>
-        <a href="/history">History</a>
-        <a href="/dashboard">Dashboard</a>
-        <a href="/pallethistory">Pallet History</a>
         <a href="/statehistory">State History</a>
+        <a href="/history">Pallets</a>
+        <a href="/pallethistory">Pallet History</a>
     </div>
     <div class="row">
         <div class="leftcolumn">
             <div class="card">
                 <h2>Workstation State History</h2>
-                <h5>Retrieves Workstation State History given time range</h5>
                 <div id="log"> </div>
             </div>
         </div>

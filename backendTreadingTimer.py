@@ -31,6 +31,7 @@ app = Flask(__name__)
 conn = sqlite3.connect(':memory:', check_same_thread=False)
 c = conn.cursor()
 
+# Table for tracking workstation state
 c.execute("""CREATE TABLE workstation (
 	        Key INTEGER PRIMARY KEY,
 	        State TEXT,
@@ -38,11 +39,13 @@ c.execute("""CREATE TABLE workstation (
 	        ShortTime Text
             )""")
 
+# Table for tracking workstation pallets real time
 c.execute("""CREATE TABLE workstation_pallets (
 	        Slot INTEGER PRIMARY KEY,
 	        Content TEXT
             )""")
 
+# Table for events
 c.execute("""CREATE TABLE event (
             Key INTEGER PRIMARY KEY,
 	        AlarmID INTEGER,
@@ -50,6 +53,7 @@ c.execute("""CREATE TABLE event (
 	        Time TIMESTAMP
             )""")
 
+# Table Overall pallet history
 c.execute("""CREATE TABLE pallet_history (
             Time TIMESTAMP,
 	        ValveCount INTEGER,
@@ -59,6 +63,7 @@ c.execute("""CREATE TABLE pallet_history (
 	        ShortTime Text
             )""")
 
+# Table or tracking total time in state
 c.execute("""CREATE TABLE totalTime (
             State TEXT,
 	        StateTotalTime INTEGER,
@@ -70,6 +75,7 @@ for i in range(6):
     with conn:
         c.execute("INSERT INTO workstation_pallets VALUES ("+str(i)+", null)")
 
+# Initialise the to total time rows
 with conn:
     c.execute("INSERT INTO totalTime VALUES(:State,:StateTotalTime,:DynTime)", {'State':"Idle", 'StateTotalTime':0, 'DynTime':0})
     c.execute("INSERT INTO totalTime VALUES(:State,:StateTotalTime,:DynTime)", {'State':"Working", 'StateTotalTime':0, 'DynTime':0})
@@ -119,7 +125,6 @@ def stateHandler():
         #now = datetime.datetime.now()
         #time= now.isoformat()
         time= datetime.now().isoformat()
-
         ####### New Stuff
         if(getLastStateFromSQL()):
             currentState = getLastStateFromSQL()[0]

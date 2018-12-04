@@ -42,12 +42,12 @@
     /* Left column */
     .leftcolumn {
         float: left;
-        width: 100%;
+        width: 60%;
     }
     /* Right column */
     .rightcolumn {
         float: left;
-        width: 0%;
+        width: 40%;
         background-color: #f1f1f1;
         padding-left: 20px;
     }
@@ -142,6 +142,15 @@
                 <div id="log"> </div>
             </div>
         </div>
+        <div class="rightcolumn">
+            <div class="card">
+                <h2>DateRangeSelect</h2>
+                <div id="reportrange" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%">
+                    <i class="fa fa-calendar"></i>&nbsp;
+                    <span></span> <i class="fa fa-caret-down"></i>
+                </div>
+            </div>
+        </div>
     </div>
 <script>
     window.setInterval(function(){
@@ -177,7 +186,28 @@
         }
         tb+="</table>";
         return tb;
+
     }
+    $('#reportrange').daterangepicker({
+        "showDropdowns": true,
+        "timePicker": true,
+        "timePicker24Hour": true,
+        "timePickerSeconds": true,
+        ranges: {
+            'Today': [moment(), moment()],
+            'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+            'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+            'This Month': [moment().startOf('month'), moment().endOf('month')],
+            'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        },
+        "startDate": "11/27/2018",
+        "endDate": "12/03/2018",
+        "opens": "left",
+        "cancelClass": "btn-clear"
+    }, function(start, end, label) {
+        console.log('New date range selected: ' + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD') + ' (predefined range: ' + label + ')');
+    });
 </script>
 </body>
 </html>

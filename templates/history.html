@@ -42,12 +42,12 @@
     /* Left column */
     .leftcolumn {
         float: left;
-        width: 100%;
+        width: 60%;
     }
     /* Right column */
     .rightcolumn {
         float: left;
-        width: 0%;
+        width: 40%;
         background-color: #f1f1f1;
         padding-left: 20px;
     }
@@ -120,6 +120,10 @@
 <head>
     <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
     <title>Workstation History</title>
 </head>
@@ -137,6 +141,12 @@
             <h2>Workstation Pallet History</h2>
             <h5>Retrieves History of Pallets</h5>
             <div id="log"> </div>
+        </div>
+    </div>
+    <div class="rightcolumn">
+        <div class="card">
+            <h2>DateRangeSelect</h2>
+            <input type="text" name="datetimes" />
         </div>
     </div>
     <div class="rightcolumn">
@@ -180,6 +190,19 @@
         tb+="</table>";
         return tb;
     }
+    $(function() {
+        $('input[name="datetimes"]').daterangepicker({
+            "showDropdowns": true,
+            "timePicker": true,
+            "timePicker24Hour": true,
+            "timePickerSeconds": true,
+            "startDate": "11/27/2018",
+            "endDate": "12/03/2018",
+            "opens": "right"
+        }, function(start, end, label) {
+            console.log('New date range selected: ' + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD') + ' (predefined range: ' + label + ')');
+        });
+    });
 </script>
 </body>
 </html>
